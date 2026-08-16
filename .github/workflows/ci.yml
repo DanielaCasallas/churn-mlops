@@ -1,0 +1,142 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -v
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: churn-api:ci
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Save image for smoke test job
+        run: docker save churn-api:ci -o /tmp/churn-api.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: churn-api-image
+          path: /tmp/churn-api.tar
+          retention-days: 1
+
+  smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: churn-api-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load -i /tmp/churn-api.tar
+
+      - name: Run container
+        run: docker run -d --name churn-api-smoke -p 8000:8000 churn-api:ci
+
+      - name: Wait for service to be healthy
+        run: |
+          for i in $(seq 1 15); do
+            if curl -sf http://localhost:8000/health; then
+              echo "Servicio arriba"
+              exit 0
+            fi
+            echo "Esperando servicio... intento $i"
+            sleep 2
+          done
+          echo "El servicio nunca respondió a /health"
+          docker logs churn-api-smoke
+          exit 1
+
+      - name: Check /health reports model loaded
+        run: |
+          curl -sf http://localhost:8000/health | tee /tmp/health.json
+          grep -q '"model_loaded":true' /tmp/health.json
+
+      - name: Real prediction against /predict
+        run: |
+          curl -sf -X POST http://localhost:8000/predict \
+            -H "Content-Type: application/json" \
+            -d '{
+              "gender": "Female", "SeniorCitizen": 0, "Partner": "Yes", "Dependents": "No",
+              "tenure": 1, "PhoneService": "No", "MultipleLines": "No phone service",
+              "InternetService": "DSL", "OnlineSecurity": "No", "OnlineBackup": "Yes",
+              "DeviceProtection": "No", "TechSupport": "No", "StreamingTV": "No", "StreamingMovies": "No",
+              "Contract": "Month-to-month", "PaperlessBilling": "Yes", "PaymentMethod": "Electronic check",
+              "MonthlyCharges": 29.85, "TotalCharges": 29.85
+            }' | tee /tmp/predict.json
+          grep -q 'churn_probability' /tmp/predict.json
+
+      - name: Invalid input returns 422, not 500
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/predict \
+            -H "Content-Type: application/json" -d '{"gender": "Female"}')
+          test "$status" = "422"
+
+      - name: Container logs (debug on failure)
+        if: failure()
+        run: docker logs churn-api-smoke
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f churn-api-smoke || true
+
+  publish:
+    needs: smoke
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:latest

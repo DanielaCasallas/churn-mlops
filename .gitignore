@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+.env
+*.egg-info/
+
+# El dataset (~1MB) y los artefactos entrenados SÍ se versionan a propósito:
+# la pauta exige artefactos "versionados" y que el proyecto levante con un
+# solo comando en un clon limpio, sin pasos manuales de entrenamiento previo.
