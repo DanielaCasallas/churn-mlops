@@ -14,6 +14,7 @@ Servicio de machine learning que predice el **riesgo de deserción (churn)** de 
 
 - **Pipeline**: `StandardScaler` (features numéricas) + `OneHotEncoder` (features categóricas) + `LogisticRegression` (`class_weight="balanced"` por el desbalance ~73/27 entre clientes que se quedan y que se van).
 - **Entrenamiento reproducible**: seed fija (`random_state=42`), split 80/20 estratificado.
+- **Selección de modelo justificada por comparación, no por preferencia a priori**: se comparó contra RandomForest, GradientBoosting y XGBoost con validación cruzada de 5 folds (`training/compare_models.py`, resultados en `models/model_comparison.json`). RandomForest obtuvo el ROC-AUC de CV más alto (0.8472) pero la diferencia con LogisticRegression (0.8459) está dentro del margen de error entre folds — es decir, empatados en desempeño. Con los modelos empatados, se eligió LogisticRegression por entrenar ~15x más rápido y ser directamente interpretable. Detalle completo en `docs/informe.pdf`, sección 3.
 - **Métricas sobre el set de prueba (datos no vistos)**:
 
 | Métrica | Valor |
