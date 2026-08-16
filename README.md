@@ -2,7 +2,7 @@
 
 Servicio de machine learning que predice el **riesgo de deserción (churn)** de clientes de una empresa de telecomunicaciones, expuesto como API REST, empaquetado en Docker y verificado automáticamente en cada `push` vía GitHub Actions.
 
-> **URL pública:** _(completar si el equipo activa el bonus de despliegue — ver sección "Despliegue" más abajo)_
+> **URL pública:** https://churn-mlops-27t8.onrender.com — [Swagger](https://churn-mlops-27t8.onrender.com/docs) · [/health](https://churn-mlops-27t8.onrender.com/health)
 
 ## Problema y datos
 
@@ -115,7 +115,21 @@ ruff check .        # sin hallazgos
 
 ## Despliegue (bonus)
 
-_(Completar por el equipo si se activa el plus de la sección 05 de la pauta: proveedor usado, plan, y cualquier limitación — por ejemplo, si el servicio "duerme" por inactividad y la primera request demora más.)_
+El servicio está desplegado en **Render** (plan Free), a partir de la misma imagen Docker que se construye y valida en el pipeline de CI/CD.
+
+- **URL pública**: https://churn-mlops-27t8.onrender.com
+- **Proveedor y plan**: Render, Free tier.
+- **Automatización**: el deploy lo dispara el job `deploy` de `.github/workflows/ci.yml`, que solo corre después de que pasen `lint` → `test` → `build` → `smoke`. Ese job llama al *Deploy Hook* de Render (guardado como `RENDER_DEPLOY_HOOK_URL` en GitHub Secrets, nunca en el código) y luego espera hasta que `/health` vuelva a responder en producción.
+- **Limitación conocida**: el plan gratuito de Render "duerme" el servicio tras un período de inactividad. La primera request después de estar dormido puede demorar entre 20 y 50 segundos en responder mientras el contenedor arranca; las siguientes son inmediatas.
+
+Prueba real contra producción:
+
+```bash
+curl -s https://churn-mlops-27t8.onrender.com/health
+```
+```json
+{"status":"ok","model_loaded":true,"model_type":"LogisticRegression"}
+```
 
 ## Variables de entorno
 
@@ -142,7 +156,15 @@ docs/           Informe del proyecto
 
 ## Uso de asistentes de IA
 
-_(Completar por el equipo: qué herramientas se usaron — por ejemplo Claude, GitHub Copilot — y para qué partes del trabajo: estructura del proyecto, boilerplate de FastAPI, workflow de CI, redacción del README, etc. Cada integrante debe poder explicar y defender cualquier parte del código en la exposición.)_
+Se usó **Claude (Anthropic)** como asistente durante el desarrollo del proyecto, en las siguientes partes:
+
+- Generación inicial del código base: pipeline de entrenamiento (`training/train.py`, `evaluate.py`), API en FastAPI (`app/`), suite de tests (`tests/`), `Dockerfile`, `docker-compose.yml` y el workflow de CI/CD (`.github/workflows/ci.yml`).
+- Redacción de la estructura inicial del `README.md` y de la plantilla del informe.
+- Guía paso a paso para el flujo de Git/GitHub (creación del repo, primer commit, push) y para el diagnóstico de un conflicto de puerto al levantar el contenedor con Docker localmente.
+
+Todo el código generado fue revisado y probado por el equipo (entrenamiento corrido localmente, tests ejecutados, `docker compose up` verificado en una máquina del equipo, pipeline de CI comprobado en verde en GitHub Actions) antes de la entrega. Cada integrante es responsable de poder explicar y defender en la exposición cualquier parte del código, independientemente de si fue escrita originalmente por una persona o generada con asistencia de IA.
+
+_(Equipo: si además usaron otra herramienta — ChatGPT, GitHub Copilot, etc. — agréguenla aquí con el mismo nivel de detalle.)_
 
 ## Video de demostración
 
