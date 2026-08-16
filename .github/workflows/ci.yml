@@ -140,3 +140,25 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}
             ghcr.io/${{ github.repository }}:latest
+
+  deploy:
+    needs: smoke
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deploy on Render
+        run: |
+          curl -sf -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+      - name: Wait for the public service to come back healthy
+        run: |
+          for i in $(seq 1 20); do
+            if curl -sf https://churn-mlops-27t8.onrender.com/health; then
+              echo "Servicio público respondiendo"
+              exit 0
+            fi
+            echo "Esperando redeploy en Render... intento $i"
+            sleep 15
+          done
+          echo "El servicio público no respondió a tiempo (puede seguir desplegando en Render, revisar el dashboard)"
+          exit 1
