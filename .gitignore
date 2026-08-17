@@ -6,6 +6,16 @@ __pycache__/
 venv/
 .env
 *.egg-info/
+# macOS
+.DS_Store
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
+
+# VS Code local settings
+.vscode/
 
 # El dataset (~1MB) y los artefactos entrenados SÍ se versionan a propósito:
 # la pauta exige artefactos "versionados" y que el proyecto levante con un

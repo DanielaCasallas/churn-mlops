@@ -14,7 +14,7 @@ Servicio de machine learning que predice el **riesgo de deserción (churn)** de 
 
 - **Pipeline**: `StandardScaler` (features numéricas) + `OneHotEncoder` (features categóricas) + `LogisticRegression` (`class_weight="balanced"` por el desbalance ~73/27 entre clientes que se quedan y que se van).
 - **Entrenamiento reproducible**: seed fija (`random_state=42`), split 80/20 estratificado.
-- **Selección de modelo justificada por comparación, no por preferencia a priori**: se comparó contra RandomForest, GradientBoosting y XGBoost con validación cruzada de 5 folds (`training/compare_models.py`, resultados en `models/model_comparison.json`). RandomForest obtuvo el ROC-AUC de CV más alto (0.8472) pero la diferencia con LogisticRegression (0.8459) está dentro del margen de error entre folds — es decir, empatados en desempeño. Con los modelos empatados, se eligió LogisticRegression por entrenar ~15x más rápido y ser directamente interpretable. Detalle completo en `docs/informe.pdf`, sección 3.
+- **Selección de modelo justificada por comparación, no por preferencia a priori**: se comparó LogisticRegression con RandomForest, GradientBoosting y XGBoost mediante validación cruzada de 5 folds (`training/compare_models.py`, resultados en `models/model_comparison.json`). RandomForest obtuvo un ROC-AUC promedio de 0.8472 y LogisticRegression de 0.8459. La diferencia de 0.0013 es pequeña respecto de la variabilidad observada entre folds. Se seleccionó LogisticRegression por ofrecer un desempeño comparable, el mayor recall en el conjunto de prueba, un tiempo de entrenamiento considerablemente menor y mayor interpretabilidad.
 - **Métricas sobre el set de prueba (datos no vistos)**:
 
 | Métrica | Valor |
@@ -32,8 +32,8 @@ Servicio de machine learning que predice el **riesgo de deserción (churn)** de 
 Requisitos: Docker y Docker Compose.
 
 ```bash
-git clone <URL_DEL_REPOSITORIO>
-cd <carpeta_del_repo>
+git clone https://github.com/DanielaCasallas/churn-mlops.git
+cd churn-mlops
 docker compose up --build
 ```
 
@@ -87,7 +87,7 @@ Mismo contrato, envuelto en `{"instances": [ {...}, {...} ]}` (entre 1 y 500 ins
 curl -s http://localhost:8000/model/schema
 ```
 ```json
-{"features":{"numeric":["tenure","MonthlyCharges","TotalCharges","SeniorCitizen"],"categorical":["gender","Partner","Dependents","PhoneService","MultipleLines","InternetService","OnlineSecurity","OnlineBackup","DeviceProtection","TechSupport","StreamingTV","StreamingMovies","Contract","PaperlessBilling","PaymentMethod"]},"target":"Churn","metrics":{"accuracy":0.7257,"precision":0.4901,"recall":0.7968,"f1":0.6069,"roc_auc":0.8351},"trained_at":"2026-08-16T18:40:58.474185+00:00"}
+{"features":{"numeric":["tenure","MonthlyCharges","TotalCharges","SeniorCitizen"],"categorical":["gender","Partner","Dependents","PhoneService","MultipleLines","InternetService","OnlineSecurity","OnlineBackup","DeviceProtection","TechSupport","StreamingTV","StreamingMovies","Contract","PaperlessBilling","PaymentMethod"]},"target":"Churn","metrics":{"accuracy":0.7257,"precision":0.4901,"recall":0.7968,"f1":0.6069,"roc_auc":0.8351},"trained_at":"2026-08-16T18:50:14.686892+00:00"}
 ```
 
 ### Entrada inválida (422, no 500)
