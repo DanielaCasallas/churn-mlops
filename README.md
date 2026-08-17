@@ -116,7 +116,7 @@ ruff check .        # sin hallazgos
 
 ## Despliegue (bonus)
 
-El servicio está desplegado en **Render** (plan Free), a partir de la misma imagen Docker que se construye y valida en el pipeline de CI/CD.
+El servicio está desplegado en **Render** (plan Free), utilizando la misma configuración Docker versionada en el repositorio y validada por el pipeline de CI/CD antes del despliegue.
 
 - **URL pública**: https://churn-mlops-27t8.onrender.com
 - **Proveedor y plan**: Render, Free tier.
@@ -165,11 +165,19 @@ Se usó **Claude (Anthropic)** como asistente durante el desarrollo del proyecto
 
 Todo el código generado fue revisado y probado por el equipo (entrenamiento corrido localmente, tests ejecutados, `docker compose up` verificado en una máquina del equipo, pipeline de CI comprobado en verde en GitHub Actions) antes de la entrega. Cada integrante es responsable de poder explicar y defender en la exposición cualquier parte del código, independientemente de si fue escrita originalmente por una persona o generada con asistencia de IA.
 
-_(Equipo: si además usaron otra herramienta — ChatGPT, GitHub Copilot, etc. — agréguenla aquí con el mismo nivel de detalle.)_
+También se utilizó **ChatGPT (OpenAI)** como apoyo en la etapa de revisión final del proyecto, principalmente para:
+
+- Revisar la reproducibilidad del repositorio y la documentación.
+- Verificar la consistencia entre métricas, artefactos del modelo y README.
+- Apoyar la ejecución y validación local de tests, linting, Docker y endpoints de la API.
+- Revisar el pipeline de CI/CD y detectar posibles riesgos antes de la entrega.
+- Apoyar la revisión y corrección del informe final.
+
+Las sugerencias entregadas por las herramientas de IA fueron revisadas y validadas por el equipo antes de incorporarse al proyecto.
 
 ## Video de demostración
 
-_(Completar: enlace al video de máximo 5 minutos mostrando el levantamiento del servicio, una predicción real y el pipeline en verde.)_
+[Ver video de demostración](https://drive.google.com/file/d/1GXZkeI4L8u1GBlugfb1PKB5EzYZmlQ5d/view?usp=share_link)
 
 ## Informe
 
